@@ -4,24 +4,25 @@
  */
 package compilateur;
 
-import lexer.LexerV2;
+import lexer.Lexer;
 import lexer.Token;
 import lexer.TypeToken;
-import errors.ErrorHandler;
-import errors.CompilerError;
+import errors.ErrorService;
+import errors.Error;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.util.List;
-import parser.Parserv4;
+import parser.Parser;
 
 public class Interface extends JFrame {
 
     private JTextArea inputArea;
     private JTextArea outputArea;
     private JButton loadButton;
+    private JButton clearButton;
     private JButton compileButton;
 
     public Interface() {
@@ -35,9 +36,11 @@ public class Interface extends JFrame {
         topPanel.setBackground(new Color(245, 245, 245));
         
         loadButton = new JButton("Charger un fichier");
+        clearButton = new JButton("Effacer");
         compileButton = new JButton("Lancer la Compilation");
 
         topPanel.add(loadButton);
+        topPanel.add(clearButton);
         topPanel.add(compileButton);
         add(topPanel, BorderLayout.NORTH);
 
@@ -57,11 +60,18 @@ public class Interface extends JFrame {
         splitPane.setResizeWeight(0.5); 
         add(splitPane, BorderLayout.CENTER);
 
-        // Actions avec classes anonymes (style etudiant)
         loadButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 chargerFichier();
+            }
+        });
+        
+        clearButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                inputArea.setText("");
+                outputArea.setText("");
             }
         });
         
@@ -114,29 +124,36 @@ public class Interface extends JFrame {
             System.out.println("ETAPE 1 : ANALYSE LEXICALE");
             System.out.println("--------------------------");
             
-            ErrorHandler errorHandler = new ErrorHandler();
-            LexerV2 lexer = new LexerV2(code, errorHandler);
+            ErrorService errorService = new ErrorService();
+            Lexer lexer = new Lexer(code, errorService);
             List<Token> tokens = lexer.tokenize();
             
-            if (errorHandler.hasErrors()) {
-                System.out.println("Echec lexical. Erreurs :");
-                for (int i = 0; i < errorHandler.getErrors().size(); i++) {
-                    System.out.println(" - " + errorHandler.getErrors().get(i));
+            if (errorService.hasErrors()) {
+                System.out.println("Echec lexical. Liste des erreurs :");
+                for (int i = 0; i < errorService.getErrors().size(); i++) {
+                    System.out.println(errorService.getErrors().get(i));
                 }
                 return; 
             } 
             
-            System.out.println("Succes analyse lexicale.");
-            System.out.println("Liste des tokens :");
+            System.out.println("Succes. Liste des tokens :");
             
+            // MODIFICATION ICI : On affiche TOUT sans filtrer
             for (int i = 0; i < tokens.size(); i++) {
                 Token t = tokens.get(i);
-                if (t.getType() != TypeToken.NEWLINE && t.getType() != TypeToken.EOF && t.getType() != TypeToken.INDENT && t.getType() != TypeToken.DEDENT) {
-                    System.out.println(" " + t.getType() + " : " + t.getValue());
-                } else {
-                    System.out.println(" " + t.getType() + " : [Structure]");
-                }
+                
+                String type = t.getType().toString();
+                String val = t.getValeur();
+                
+                // Alignement pour faire joli
+                while(type.length() < 15) type = type + " ";
+                
+                // Si la valeur est vide (ex: INDENT), on met un petit indicateur visuel (optionnel)
+                if (val.equals("")) val = " "; 
+                
+                System.out.println(" " + type + " : " + val);
             }
+            
             System.out.println("Nombre de tokens : " + tokens.size());
             System.out.println("");
 
@@ -144,15 +161,15 @@ public class Interface extends JFrame {
             System.out.println("ETAPE 2 : ANALYSE SYNTAXIQUE");
             System.out.println("----------------------------");
             
-            Parserv4 parser = new Parserv4(tokens, errorHandler);
-            parser.analyser(); 
+            Parser parser = new Parser(tokens, errorService);
+            parser.Z(); 
             
-            if (errorHandler.hasErrors()) {
-                System.out.println("Echec syntaxique. Erreurs :");
-                for (int i = 0; i < errorHandler.getErrors().size(); i++) {
-                    CompilerError err = errorHandler.getErrors().get(i);
-                    if (err.getType() == CompilerError.ErrorType.SYNTAXIC) {
-                        System.out.println(" - " + err);
+            if (errorService.hasErrors()) {
+                System.out.println("Echec syntaxique. Liste des erreurs :");
+                for (int i = 0; i < errorService.getErrors().size(); i++) {
+                    Error err = errorService.getErrors().get(i);
+                    if (err.getType() == Error.ErrorType.SYNTAXIC) {
+                        System.out.println(err);
                     }
                 }
             } else {

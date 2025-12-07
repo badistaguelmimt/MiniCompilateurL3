@@ -4,28 +4,28 @@
  */
 package lexer;
 
-import errors.CompilerError;
-import errors.ErrorHandler;
+import errors.Error;
+import errors.ErrorService;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LexerV2 {
+public class Lexer {
     private String code;
     private int i; 
     private int ligne;
     private int colonne;
     private List<Token> tokens;
-    private ErrorHandler errorHandler;
+    private ErrorService errorService;
     private List<Integer> niveauxIndent; 
     private boolean debutLigne; 
     
-    public LexerV2(String code, ErrorHandler errorHandler) {
+    public Lexer(String code, ErrorService errorService) {
         this.code = code + '\0'; 
         this.i = 0;
         this.ligne = 1;
         this.colonne = 1;
         this.tokens = new ArrayList<>();
-        this.errorHandler = errorHandler;
+        this.errorService = errorService;
         this.niveauxIndent = new ArrayList<>();
         this.niveauxIndent.add(0); 
         this.debutLigne = true;
@@ -35,30 +35,24 @@ public class LexerV2 {
         
         while (code.charAt(i) != '\0') {
             
-            // GESTION INDENTATION AMELIOREE
             if (debutLigne) {
-                // On mange les espaces de debut de ligne
                 int espaceCount = 0;
                 int saveI = i;
                 int saveCol = colonne;
                 
-                // Compter les espaces sans avancer definitivement (lookahead)
                 while (code.charAt(saveI) == ' ' || code.charAt(saveI) == '\t') {
                     if (code.charAt(saveI) == ' ') espaceCount++;
                     else espaceCount += 4;
                     saveI++;
                 }
                 
-                // Si la ligne est vide ou un commentaire, ON NE GENERE PAS D'INDENT
                 if (code.charAt(saveI) == '\n' || code.charAt(saveI) == '#' || code.charAt(saveI) == '\r') {
-                    // On ne fait rien, on laisse la boucle principale gerer le saut de ligne
                     debutLigne = false; 
                 } 
                 else {
-                    // C'est une vraie ligne de code, on valide l'indentation
                     debutLigne = false;
-                    colonne = colonne + espaceCount; // Mise a jour colonne reelle
-                    i = saveI; // On avance le curseur
+                    colonne = colonne + espaceCount; 
+                    i = saveI; 
                     
                     int niveauPrec = niveauxIndent.get(niveauxIndent.size() - 1);
                     
@@ -71,7 +65,7 @@ public class LexerV2 {
                             tokens.add(new Token(TypeToken.DEDENT, "", ligne, 1));
                         }
                         if (niveauxIndent.get(niveauxIndent.size() - 1) != espaceCount) {
-                            errorHandler.addError(new CompilerError(CompilerError.ErrorType.LEXICAL, "Erreur Indentation", ligne, 1));
+                            errorService.addError(new Error(Error.ErrorType.LEXICAL, "Erreur Indentation", ligne, 1));
                         }
                     }
                 }
@@ -79,7 +73,6 @@ public class LexerV2 {
             
             if (code.charAt(i) == '\0') break;
 
-            // Analyse standard
             char c = code.charAt(i);
             
             if (c == ' ' || c == '\t' || c == '\r') {
@@ -99,10 +92,10 @@ public class LexerV2 {
                     i++;
                 }
             }
-            else if (Character.isDigit(c)) {
+            else if (c >= '0' && c <= '9') {
                 int debutC = colonne;
                 String num = "";
-                while (Character.isDigit(code.charAt(i)) || code.charAt(i) == '.') {
+                while ((code.charAt(i) >= '0' && code.charAt(i) <= '9') || code.charAt(i) == '.') {
                     num += code.charAt(i);
                     i++; colonne++;
                 }
@@ -120,14 +113,17 @@ public class LexerV2 {
                 if (code.charAt(i) == quote) { i++; colonne++; }
                 tokens.add(new Token(TypeToken.STRING, str, ligne, debutC));
             }
-            else if (Character.isLetter(c) || c == '_') {
+            else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_') {
                 int debutC = colonne;
                 String id = "";
-                while (Character.isLetterOrDigit(code.charAt(i)) || code.charAt(i) == '_') {
+                while ((code.charAt(i) >= 'a' && code.charAt(i) <= 'z') || 
+                       (code.charAt(i) >= 'A' && code.charAt(i) <= 'Z') || 
+                       (code.charAt(i) >= '0' && code.charAt(i) <= '9') || 
+                       code.charAt(i) == '_') {
                     id += code.charAt(i);
                     i++; colonne++;
                 }
-                // Mots cles
+                
                 if (id.equals("try")) tokens.add(new Token(TypeToken.TRY, id, ligne, debutC));
                 else if (id.equals("except")) tokens.add(new Token(TypeToken.EXCEPT, id, ligne, debutC));
                 else if (id.equals("finally")) tokens.add(new Token(TypeToken.FINALLY, id, ligne, debutC));
@@ -157,7 +153,6 @@ public class LexerV2 {
                 else tokens.add(new Token(TypeToken.IDENTIFIER, id, ligne, debutC));
             }
             else {
-                // Operateurs simples
                 int debutC = colonne;
                 if (c == '=') {
                     i++; colonne++;
@@ -196,7 +191,7 @@ public class LexerV2 {
                 else if (c == ',') { tokens.add(new Token(TypeToken.COMMA, ",", ligne, colonne)); i++; colonne++; }
                 else if (c == '.') { tokens.add(new Token(TypeToken.DOT, ".", ligne, colonne)); i++; colonne++; }
                 else {
-                    errorHandler.addError(new CompilerError(CompilerError.ErrorType.LEXICAL, "Inconnu: " + c, ligne, colonne));
+                    errorService.addError(new Error(Error.ErrorType.LEXICAL, "Inconnu: " + c, ligne, colonne));
                     i++; colonne++;
                 }
             }
@@ -206,7 +201,7 @@ public class LexerV2 {
             niveauxIndent.remove(niveauxIndent.size() - 1);
             tokens.add(new Token(TypeToken.DEDENT, "", ligne, colonne));
         }
-        tokens.add(new Token(TypeToken.EOF, "", ligne, colonne));
+        tokens.add(new Token(TypeToken.EOF, "[FIN]", ligne, colonne));
         
         return tokens;
     }

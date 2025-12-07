@@ -5,7 +5,7 @@
 package lexer;
 
 public enum TypeToken {
-    // Mots-cles
+    
     TRY, EXCEPT, FINALLY, RAISE,
     IF, ELIF, ELSE,
     WHILE, FOR, IN,
@@ -15,16 +15,13 @@ public enum TypeToken {
     AND, OR, NOT,
     TRUE, FALSE, NONE,
     
-    // Noms speciaux
     TAGUELMIMT,      
     BADIS,           
     
-    // Base
     IDENTIFIER,
     NUMBER,
     STRING,
     
-    // Operateurs
     PLUS,            
     MINUS,           
     MULTIPLY,       
@@ -45,7 +42,6 @@ public enum TypeToken {
     LESS_EQUAL,      
     GREATER_EQUAL,   
     
-    // Delimiteurs
     LPAREN,          
     RPAREN,          
     LBRACKET,        
@@ -57,7 +53,6 @@ public enum TypeToken {
     SEMICOLON,       
     DOT,            
     
-    // Structure
     NEWLINE,        
     INDENT,    
     DEDENT,          

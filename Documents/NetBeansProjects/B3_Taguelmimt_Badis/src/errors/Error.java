@@ -4,7 +4,7 @@
  */
 package errors;
 
-public class CompilerError {
+public class Error {
     public enum ErrorType {
         LEXICAL,
         SYNTAXIC
@@ -12,14 +12,14 @@ public class CompilerError {
     
     private ErrorType type;
     private String message;
-    private int line;
-    private int column;
+    private int ligne;
+    private int colonne;
     
-    public CompilerError(ErrorType type, String message, int line, int column) {
+    public Error(ErrorType type, String message, int ligne, int colonne) {
         this.type = type;
         this.message = message;
-        this.line = line;
-        this.column = column;
+        this.ligne = ligne;
+        this.colonne = colonne;
     }
     
     public ErrorType getType() {
@@ -28,15 +28,14 @@ public class CompilerError {
     
     @Override
     public String toString() {
-        String prefixe = "";
+        String x = "";
         
-        // Pas d'operateur ternaire, utilisation de if/else simple
         if (type == ErrorType.LEXICAL) {
-            prefixe = "ERREUR LEXICALE";
+            x = "[ERREUR LEXICALE]";
         } else {
-            prefixe = "ERREUR SYNTAXIQUE";
+            x = "[ERREUR SYNTAXIQUE]";
         }
         
-        return prefixe + " ligne " + line + ", colonne " + column + " : " + message;
+        return x + " ligne " + ligne + ", colonne " + colonne + " -> " + message;
     }
 }
