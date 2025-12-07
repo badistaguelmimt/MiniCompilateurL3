@@ -1,0 +1,10 @@
+if x > y:
+    print("x est plus grand")
+    while x > 0:
+        x = x - 1
+        # boucle
+
+else:
+    print('y est plus grand')
+    for i in range(3):
+        pass
