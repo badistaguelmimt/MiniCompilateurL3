@@ -138,17 +138,14 @@ public class Interface extends JFrame {
             
             System.out.println("Succes. Liste des tokens :");
             
-            // MODIFICATION ICI : On affiche TOUT sans filtrer
             for (int i = 0; i < tokens.size(); i++) {
                 Token t = tokens.get(i);
                 
                 String type = t.getType().toString();
                 String val = t.getValeur();
                 
-                // Alignement pour faire joli
                 while(type.length() < 15) type = type + " ";
                 
-                // Si la valeur est vide (ex: INDENT), on met un petit indicateur visuel (optionnel)
                 if (val.equals("")) val = " "; 
                 
                 System.out.println(" " + type + " : " + val);
